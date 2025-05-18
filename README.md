@@ -1,14 +1,14 @@
-# AHK Scripts Collection
+# My Personal AHK Scripts Collection
 
-A collection of portable, ready-to-use [AutoHotkey v2.0](https://www.autohotkey.com/) scripts for productivity, automation, and workflow enhancement on Windows.
+This is my personal collection of portable, ready-to-use [AutoHotkey v2.0](https://www.autohotkey.com/) scripts. I use these to boost productivity, automate repetitive tasks, and streamline my workflow on Windows.
 
 ---
 
 ## About
 
-- Each script is **standalone** and can be run directly with AutoHotkey v2.0.
-- All scripts are also designed to work seamlessly with the [AutoHotkey Script Manager](https://github.com/magfje/ahk-script-manager) for easy enabling/disabling and editing.
-- No hardcoded user paths—scripts are portable and easy to configure.
+- Every script here is **standalone** and can be run directly with AutoHotkey v2.0.
+- I also use these with the [AutoHotkey Script Manager](https://github.com/magfje/ahk-script-manager) for easy enabling, disabling, and editing.
+- All scripts are portable—no hardcoded user paths, and easy to configure for your own setup.
 
 ---
 
@@ -33,7 +33,7 @@ A collection of portable, ready-to-use [AutoHotkey v2.0](https://www.autohotkey.
 Auto-inserts closing brackets and quotes (like in code editors). Disables itself in VS Code and Cursor to avoid conflicts.
 
 ### auto-codeblock.ahk
-Press Shift+` three times quickly to insert a Markdown code block (```) using the clipboard. Great for writing code in chat or notes.
+Press Shift+` three times quickly to insert a Markdown code block (```) using the clipboard. Super handy for writing code in chat or notes.
 
 ### caps-to-mod.ahk
 Turns CapsLock into a powerful modifier for fast app switching:
@@ -45,9 +45,9 @@ Turns CapsLock into a powerful modifier for fast app switching:
 - `CapsLock + f` for FilePilot
 - `CapsLock + u` for Cursor
 
-**Note:** Edit the configuration section at the top of the script to match your app install locations if needed.
+**Note:** You can edit the configuration section at the top of the script to match your app install locations if needed.
 
 ---
 
 ## Looking for a Script Manager?
-Check out the [AutoHotkey Script Manager](https://github.com/magfje/ahk-script-manager) for a GUI to manage, enable, and edit your scripts easily.
+I recommend the [AutoHotkey Script Manager](https://github.com/magfje/ahk-script-manager) for a GUI to manage, enable, and edit your scripts easily.
