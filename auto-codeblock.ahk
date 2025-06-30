@@ -1,72 +1,65 @@
 ﻿; Portable script: works standalone or with Script Manager
 #Requires AutoHotkey v2.0
 
-; Triple Backtick Code Block Script - Safe Clipboard Method
-; Press Shift+` three times quickly to insert code block
+; Triple Backtick Code Block Script
+; Press CapsLock+\ three times quickly to insert code block
+; (Using CapsLock+\ to avoid dead key issues)
+; Intended for nordic keyboard layout
 
 #SingleInstance Force
 SendMode "Input"
 
-; Initialize count tracking
-global backtickCount := 0
-global lastKeyTime := 0
+; Simple tracking
+global pressCount := 0
+global timerActive := false
 
-; Shift+` hotkey
-+`::
+; CapsLock+\ hotkey (to avoid dead key issues)
+CapsLock & \::
 {
-    global backtickCount, lastKeyTime
+    global pressCount, timerActive
 
-    ; Get current time
-    currentTime := A_TickCount
+    ; Increment count
+    pressCount += 1
 
-    ; If it's been too long since last press, reset counter
-    if (currentTime - lastKeyTime > 1000)
-        backtickCount := 0
+    ; Debug
+    ToolTip "Press: " . pressCount
+    SetTimer () => ToolTip(), -300
 
-    ; Update last press time
-    lastKeyTime := currentTime
-
-    ; Increment counter
-    backtickCount += 1
-
-    ; Debug tooltip (can remove this later)
-    ToolTip "Count: " . backtickCount
-    SetTimer () => ToolTip(), -1000  ; Hide tooltip after 1 second
-
-    ; On the FIRST and SECOND press, send the normal key
-    if (backtickCount < 3) {
-        ; Just send the character as normal
-        SendInput "{Blind}{`` }"
+    ; If this is the first press, start timer
+    if (!timerActive) {
+        timerActive := true
+        SetTimer(ResetCounter, 400)
     }
-    ; Only on the THIRD press, insert the code block
-    else if (backtickCount = 3) {
-        ; Create a critical section so nothing interrupts our clipboard operations
-        Critical "On"
 
-        ; Save current clipboard with full content
-        savedClip := ClipboardAll()
-
-        ; Clear clipboard and prepare code block
-        A_Clipboard := ""  ; Clear first for safety
-        A_Clipboard := "``````" . "`n" . "`n" . "``````"
-
-        ; Wait to ensure clipboard is ready (important for reliability)
-        ClipWait 1
-
-        ; Paste content
-        SendInput "^v"
-
-        ; Position cursor - small delay to ensure paste completes
-        Sleep 30
-        SendInput "{Up}"
-
-        ; Restore original clipboard
-        A_Clipboard := savedClip
-
-        ; End critical section
-        Critical "Off"
-
-        ; Reset counter
-        backtickCount := 0
+    ; If we've reached 3 presses, create code block immediately
+    if (pressCount >= 3) {
+        SetTimer(ResetCounter, 0)  ; Cancel timer
+        CreateCodeBlock()
+        ResetCounter()
     }
+}
+
+; Function to create code block
+CreateCodeBlock() {
+    ; Save clipboard
+    savedClip := ClipboardAll()
+
+    ; Create code block
+    A_Clipboard := "``````" . "`n" . "`n" . "``````"
+    ClipWait 1
+
+    ; Paste and position cursor
+    SendInput "^v"
+    Sleep 50
+    SendInput "{Up}"
+
+    ; Restore clipboard
+    A_Clipboard := savedClip
+}
+
+; Function to reset counter
+ResetCounter() {
+    global pressCount, timerActive
+    pressCount := 0
+    timerActive := false
 }
