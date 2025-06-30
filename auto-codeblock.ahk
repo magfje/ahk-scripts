@@ -22,8 +22,8 @@ CapsLock & \::
     pressCount += 1
 
     ; Debug
-    ToolTip "Press: " . pressCount
-    SetTimer () => ToolTip(), -300
+    ; ToolTip "Press: " . pressCount
+    ; SetTimer () => ToolTip(), -300
 
     ; If this is the first press, start timer
     if (!timerActive) {
