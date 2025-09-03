@@ -24,7 +24,6 @@ SetCapsLockState "AlwaysOff"
 
 ; Global variables to track window states for each app
 global appWindowIndex := Map()
-global appWindowLists := Map()
 global editorWindowIndex := 0  ; Index for combined editor windows
 
 ; Regular hotkeys for app switching
@@ -44,6 +43,15 @@ CreateHotkey(k) {
     Hotkey("CapsLock & " k, (*) => SwitchToApp(k))
 }
 
+; Function to check if a window ID is still valid
+IsValidWindow(winID) {
+    try {
+        return WinExist("ahk_id" winID)
+    } catch {
+        return false
+    }
+}
+
 ; Function to cycle through all VS Code and Cursor windows
 CycleEditorWindows() {
     global editorWindowIndex  ; Ensure we're using the global variable
@@ -59,7 +67,7 @@ CycleEditorWindows() {
         return
     }
 
-    ; Get window lists for both editors
+    ; Get fresh window lists for both editors
     vscodeWindows := WinGetList(vscodeClass)
     cursorWindows := WinGetList(cursorClass)
 
@@ -83,24 +91,43 @@ CycleEditorWindows() {
         return
     }
 
-    ; Make sure editorWindowIndex is valid for the current list
-    if (editorWindowIndex < 0 || editorWindowIndex >= combinedWindows.Length) {
-        editorWindowIndex := 0  ; Reset if invalid
+    ; Get currently active window
+    try {
+        currentActiveWindow := WinGetID("A")
+    } catch {
+        currentActiveWindow := 0
     }
 
-    ; Increment the window index
-    editorWindowIndex := editorWindowIndex + 1
+    ; Find current window in the list to determine next window
+    currentIndex := 0
+    for i, winID in combinedWindows {
+        if (winID = currentActiveWindow) {
+            currentIndex := i
+            break
+        }
+    }
 
-    ; Wrap around if needed
-    if (editorWindowIndex > combinedWindows.Length) {
-        editorWindowIndex := 1
+    ; Calculate next index
+    nextIndex := currentIndex + 1
+    if (nextIndex > combinedWindows.Length) {
+        nextIndex := 1
     }
 
     ; Get the window to activate
-    windowToActivate := combinedWindows[editorWindowIndex]
+    windowToActivate := combinedWindows[nextIndex]
 
-    ; Activate the window
-    WinActivate("ahk_id" windowToActivate)
+    ; Validate and activate the window
+    if (IsValidWindow(windowToActivate)) {
+        WinActivate("ahk_id" windowToActivate)
+    } else {
+        ; If window is invalid, try the first valid window in the list
+        for winID in combinedWindows {
+            if (IsValidWindow(winID)) {
+                WinActivate("ahk_id" winID)
+                break
+            }
+        }
+    }
 }
 
 ; Function to switch to app or cycle between instances
@@ -117,60 +144,61 @@ SwitchToApp(key) {
     ; Get application class
     AppClass := "ahk_exe " exeName
 
-    ; Get all windows for this app
+    ; Get fresh window list
     windowList := WinGetList(AppClass)
     windowCount := windowList.Length
 
     ; If no windows found, launch app
     if (windowCount = 0) {
         Run(app["path"])
+        appWindowIndex[exeName] := 0  ; Reset index
         return
     }
 
-    ; Check if we need to refresh our window list
-    refreshList := true
-
-    ; If we have a stored list for this app
-    if (appWindowLists.Has(exeName)) {
-        ; Get the stored list and check if it's still valid
-        storedList := appWindowLists[exeName]
-
-        ; If the count matches, assume it's still valid
-        ; (This could be improved with more validation)
-        if (storedList.Length = windowCount) {
-            refreshList := false
-        }
-    }
-
-    ; If we need to refresh or don't have a stored list
-    if (refreshList) {
-        ; Store the new window list
-        appWindowLists[exeName] := windowList
-        ; Reset index to 0
-        appWindowIndex[exeName] := 0
-    }
-
-    ; Get the current list and increment index
-    currentList := appWindowLists[exeName]
-
-    ; Increment the index
+    ; Initialize index if not exists
     if (!appWindowIndex.Has(exeName)) {
         appWindowIndex[exeName] := 0
     }
 
-    ; Move to next index
-    appWindowIndex[exeName] := appWindowIndex[exeName] + 1
-
-    ; Wrap around if needed
-    if (appWindowIndex[exeName] > currentList.Length) {
-        appWindowIndex[exeName] := 1
+    ; Make sure index is valid for current window count
+    if (appWindowIndex[exeName] < 0 || appWindowIndex[exeName] >= windowCount) {
+        appWindowIndex[exeName] := 0
     }
 
-    ; Get the window to activate
-    windowToActivate := currentList[appWindowIndex[exeName]]
+    ; Try to cycle through windows, handling invalid ones
+    attempts := 0
+    maxAttempts := windowCount
 
-    ; Activate the window
-    WinActivate("ahk_id" windowToActivate)
+    while (attempts < maxAttempts) {
+        ; Move to next index
+        appWindowIndex[exeName] := appWindowIndex[exeName] + 1
+
+        ; Wrap around if needed
+        if (appWindowIndex[exeName] > windowCount) {
+            appWindowIndex[exeName] := 1
+        }
+
+        ; Get the window to activate
+        windowToActivate := windowList[appWindowIndex[exeName]]
+
+        ; Try to activate if valid
+        if (IsValidWindow(windowToActivate)) {
+            WinActivate("ahk_id" windowToActivate)
+            return
+        }
+
+        attempts++
+    }
+
+    ; If we get here, all windows were invalid - get fresh list and try first valid one
+    windowList := WinGetList(AppClass)
+    loop windowList.Length {
+        if (IsValidWindow(windowList[A_Index])) {
+            WinActivate("ahk_id" windowList[A_Index])
+            appWindowIndex[exeName] := A_Index
+            return
+        }
+    }
 }
 
 ; Make CapsLock & key combinations work
